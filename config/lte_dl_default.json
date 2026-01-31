@@ -17,6 +17,8 @@
   "DL_Qm": 8,
   "UL_Qm": 8,
   "cfi": 2,
+  "cellId": 0,
+  "numCellRefPorts": 1,
   "gapPattern": 0,
   "pucchRegions": 1,
   "prachCfgIndex": 0,
