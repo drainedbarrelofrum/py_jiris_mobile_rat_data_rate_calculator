@@ -131,3 +131,9 @@ class GridPlotter:
         if style.show:
             plt.show()
         plt.close(fig)
+
+    @staticmethod
+    def default_style(
+        save_path: str | Path | None, show: bool, title: str | None = None
+    ) -> PlotStyle:
+        return PlotStyle(save_path=save_path, show=show, format="svg", title=title)

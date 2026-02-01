@@ -7,6 +7,8 @@ from typing import Any, Mapping
 
 from src.lte.channels.pbch import PBCH, PBCHConfig
 from src.lte.config.dimensions import grid_dimensions_from_config
+from src.lte.config.schema import LteDlConfig
+from src.lte.grid.io import GridIO
 from src.lte.grid.plotter import GridPlotter
 from src.lte.grid.resource_grid import ResourceGrid
 
@@ -30,6 +32,7 @@ class LteDlRunner:
 
     def __init__(self, config: Mapping[str, Any]) -> None:
         self._config = config
+        self._validated_config: LteDlConfig | None = None
         self._grid: ResourceGrid | None = None
 
     @classmethod
@@ -42,9 +45,18 @@ class LteDlRunner:
     @property
     def grid(self) -> ResourceGrid:
         if self._grid is None:
-            dims = grid_dimensions_from_config(self._config)
+            cfg = self.validated_config
+            dims = grid_dimensions_from_config(cfg)
             self._grid = ResourceGrid(dims)
         return self._grid
+
+    @property
+    def validated_config(self) -> LteDlConfig:
+        if self._validated_config is None:
+            cfg = LteDlConfig.from_mapping(self._config)
+            cfg.validate()
+            self._validated_config = cfg
+        return self._validated_config
 
     def run(self, options: RunOptions | None = None) -> None:
         options = options or RunOptions()
@@ -53,35 +65,31 @@ class LteDlRunner:
             pbch = PBCH(PBCHConfig.from_config(self._config))
             self.grid.register_mask(pbch.name, pbch.allocate(self.grid))
         if options.save_csv:
-            self.grid.export_available_csv_default()
+            GridIO(self.grid).export_available_csv()
         if options.save_allocated_csv:
-            self.grid.export_allocation_csv_default(list(options.allocation_channels))
+            GridIO(self.grid).export_allocation_csv(
+                channel_order=list(options.allocation_channels)
+            )
         if options.plot_available:
             plotter = GridPlotter(self.grid)
             plotter.plot_available(
-                style=plotter_style(
-                    save_path=options.save_svg_path, show=options.show_plot
+                style=plotter.default_style(
+                    save_path=options.save_svg_path, show=options.show_plot, title=None
                 )
             )
         if options.plot_combined:
             plotter = GridPlotter(self.grid)
             plotter.plot_combined(
-                style=plotter_style(
-                    save_path=options.save_svg_path, show=options.show_plot
+                style=plotter.default_style(
+                    save_path=options.save_svg_path, show=options.show_plot, title=None
                 )
             )
         if options.plot_allocation_map:
             plotter = GridPlotter(self.grid)
             plotter.plot_allocation_map(
                 channel_order=options.allocation_channels,
-                style=plotter_style(
-                    save_path=options.save_svg_path, show=options.show_plot
+                style=plotter.default_style(
+                    save_path=options.save_svg_path, show=options.show_plot, title=None
                 ),
                 colors=options.allocation_colors,
             )
-
-
-def plotter_style(save_path: str | Path | None, show: bool) -> "PlotStyle":
-    from src.lte.grid.plotter import PlotStyle
-
-    return PlotStyle(save_path=save_path, show=show, format="svg")

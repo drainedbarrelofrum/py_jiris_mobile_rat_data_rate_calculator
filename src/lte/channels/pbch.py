@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Set, Tuple
 
+from src.lte.channels.base import Channel
 from src.lte.grid.resource_grid import ResourceGrid
 
 
@@ -39,7 +40,7 @@ class PBCHConfig:
         )
 
 
-class PBCH:
+class PBCH(Channel):
     """PBCH mapping for LTE DL grid (TS 36.211)."""
 
     name = "PBCH"

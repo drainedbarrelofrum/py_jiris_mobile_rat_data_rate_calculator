@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import csv
-from pathlib import Path
 from typing import Dict, Tuple
 
 
@@ -153,50 +151,3 @@ class ResourceGrid:
             for j in range(sym):
                 available[i][j] = not combined[i][j]
         return available
-
-    def export_mask_csv(self, mask: list[list[bool]], path: str | Path) -> None:
-        csv_path = Path(path)
-        with csv_path.open("w", encoding="utf-8", newline="") as handle:
-            writer = csv.writer(handle)
-            sc_count, sym_count = self.shape()
-            header = ["subcarrier_index"] + [f"sym_{i}" for i in range(sym_count)]
-            writer.writerow(header)
-            for sc_idx, row in enumerate(mask):
-                if len(row) != sym_count:
-                    raise ValueError("Mask row length does not match grid shape")
-                writer.writerow([sc_idx] + [int(v) for v in row])
-
-    def export_available_csv(self, path: str | Path) -> None:
-        self.export_mask_csv(self.available_mask(), path)
-
-    def export_available_csv_default(self) -> Path:
-        default_path = Path("data_output") / "grid_available.csv"
-        self.export_available_csv(default_path)
-        return default_path
-
-    def export_allocation_csv(
-        self, channel_order: list[str], path: str | Path
-    ) -> None:
-        sc_count, sym_count = self.shape()
-        alloc = [["Available" for _ in range(sym_count)] for _ in range(sc_count)]
-        for name in channel_order:
-            mask = self.get_mask(name)
-            for i in range(sc_count):
-                row = alloc[i]
-                mrow = mask[i]
-                for j in range(sym_count):
-                    if mrow[j]:
-                        row[j] = name
-
-        csv_path = Path(path)
-        with csv_path.open("w", encoding="utf-8", newline="") as handle:
-            writer = csv.writer(handle)
-            header = ["subcarrier_index"] + [f"sym_{i}" for i in range(sym_count)]
-            writer.writerow(header)
-            for sc_idx, row in enumerate(alloc):
-                writer.writerow([sc_idx] + row)
-
-    def export_allocation_csv_default(self, channel_order: list[str]) -> Path:
-        default_path = Path("data_output") / "grid_allocated.csv"
-        self.export_allocation_csv(channel_order=channel_order, path=default_path)
-        return default_path
